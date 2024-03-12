@@ -53,9 +53,19 @@ namespace MouseAudio
                 {
                     lastFrequency = frequency;
                     byte[] sample = GenerateSample(frequency, 20); // Adjust duration
-                    bufferedWaveProvider.AddSamples(sample, 0, sample.Length);
+                    if (bufferedWaveProvider.BufferLength - bufferedWaveProvider.BufferedBytes >= sample.Length)
+                    {
+                        bufferedWaveProvider.AddSamples(sample, 0, sample.Length);
+                    }
+                    else
+                    {
+                        Thread.Sleep(100); // Adjust sleep duration
+                    }
                 }
-                Thread.Sleep(10); // Adjust sleep duration
+                else
+                {
+                    Thread.Sleep(50); // Adjust sleep duration
+                }
             }
         }
 
@@ -78,13 +88,15 @@ namespace MouseAudio
             int sampleRate = 44100;
             int sampleCount = sampleRate * milliseconds / 1000;
             byte[] buffer = new byte[sampleCount * 2]; // 16-bit, so 2 bytes per sample
+            double phaseIncrement = 2 * Math.PI * frequency / sampleRate;
+            double phase = 0;
             for (int i = 0; i < sampleCount; i++)
             {
-                double t = (double)i / sampleRate;
-                double wave = Math.Sin(2 * Math.PI * frequency * t);
+                double wave = Math.Sin(phase);
                 short sampleValue = (short)(wave * short.MaxValue);
                 buffer[i * 2] = (byte)(sampleValue & 0xff);
                 buffer[i * 2 + 1] = (byte)((sampleValue >> 8) & 0xff);
+                phase += phaseIncrement;
             }
             return buffer;
         }
