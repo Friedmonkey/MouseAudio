@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
 using NAudio.Wave;
@@ -10,6 +11,7 @@ namespace MouseAudio
         private WaveOutEvent outputDevice;
         private BufferedWaveProvider bufferedWaveProvider;
         private bool isMouseDown = false;
+        private Point lastMousePosition;
         private float lastFrequency = 0;
 
         public Form1()
@@ -28,7 +30,7 @@ namespace MouseAudio
             if (e.Button == MouseButtons.Left)
             {
                 isMouseDown = true;
-                lastFrequency = Cursor.Position.X / (float)Screen.PrimaryScreen.Bounds.Width * 5000 + 100; // Adjust frequency range
+                lastMousePosition = Cursor.Position;
                 PlaySwooshStart();
                 Thread audioThread = new Thread(AudioLoop);
                 audioThread.Start();
@@ -48,7 +50,10 @@ namespace MouseAudio
         {
             while (isMouseDown)
             {
-                float frequency = Cursor.Position.X / (float)Screen.PrimaryScreen.Bounds.Width * 5000 + 100; // Adjust frequency range
+                Point currentMousePosition = Cursor.Position;
+                float velocity = Math.Abs(currentMousePosition.X - lastMousePosition.X);
+                lastMousePosition = currentMousePosition;
+                float frequency = velocity+200; // Adjust factor and base frequency as needed
                 if (frequency != lastFrequency)
                 {
                     lastFrequency = frequency;
@@ -64,7 +69,8 @@ namespace MouseAudio
                 }
                 else
                 {
-                    Thread.Sleep(50); // Adjust sleep duration
+                    Thread.Sleep(35); // Adjust sleep duration
+                    lastFrequency = 0;
                 }
             }
         }
